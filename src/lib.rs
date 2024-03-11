@@ -2,7 +2,7 @@ extern crate glm;
 extern crate serde;
 
 use serde::{Deserialize, Serialize};
-use std::ops;
+use std::{self, ops};
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct V3 {
@@ -132,19 +132,15 @@ impl ops::BitXorAssign<V3> for V3 {
     }
 }
 
-fn lerp(a: V3, b: V3, t: f32) -> V3 {
+pub fn lerp(a: V3, b: V3, t: f32) -> V3 {
     a * (1.0 - t) + b * t
 }
 
-// TODO(Jovan): Implement
-#[derive(Copy, Clone, Debug, PartialEq, Default)]
-pub struct Quat {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
-}
-
+// Column-major order
+// m[0] first column
+// m[1] second column
+// m[2] third column
+// m[3] fourth column
 #[derive(Copy, Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct M44 {
     m: [[f32; 4]; 4],
@@ -209,6 +205,57 @@ impl M44 {
         m[2][2] *= v.z;
         M44 { m }
     }
+
+    pub fn rot_x(&self, rad: f32) -> M44 {
+        /*
+             | 1  0       0     |
+        Rx = | 0  cos R  -sin R |
+             | 0  sin R   cos R |
+        */
+        let c = rad.cos();
+        let s = rad.sin();
+        let rot_matrix = M44::new([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, c, s, 0.0],
+            [0.0, -s, c, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        rot_matrix * *self
+    }
+
+    pub fn rot_y(&self, rad: f32) -> M44 {
+        /*
+             |  cos R   0   sin R  |
+        Ry = |  0       1   0      |
+             | -sin R   0   cos R  |
+        */
+        let c = rad.cos();
+        let s = rad.sin();
+        let rot_matrix = M44::new([
+            [c, 0.0, -s, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [s, 0.0, c, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        rot_matrix * *self
+    }
+
+    pub fn rot_z(&self, rad: f32) -> M44 {
+        /*
+             |  cos R   -sin R    0  |
+        Rz = |  sin R    cos R    0  |
+             |  0        0        1  |
+        */
+        let c = rad.cos();
+        let s = rad.sin();
+        let rot_matrix = M44::new([
+            [c, s, 0.0, 0.0],
+            [-s, c, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]);
+        rot_matrix * *self
+    }
 }
 
 impl ops::Mul<M44> for M44 {
@@ -218,10 +265,10 @@ impl ops::Mul<M44> for M44 {
         let mut m = [[0.0; 4]; 4];
         for i in 0..4 {
             for j in 0..4 {
-                m[i][j] = self.m[i][0] * rhs.m[0][j]
-                    + self.m[i][1] * rhs.m[1][j]
-                    + self.m[i][2] * rhs.m[2][j]
-                    + self.m[i][3] * rhs.m[3][j];
+                m[j][i] = self.m[j][0] * rhs.m[0][i]
+                    + self.m[j][1] * rhs.m[1][i]
+                    + self.m[j][2] * rhs.m[2][i]
+                    + self.m[j][3] * rhs.m[3][i];
             }
         }
         M44 { m }
@@ -233,10 +280,10 @@ impl ops::MulAssign<M44> for M44 {
         let mut m = [[0.0; 4]; 4];
         for i in 0..4 {
             for j in 0..4 {
-                m[i][j] = self.m[i][0] * rhs.m[0][j]
-                    + self.m[i][1] * rhs.m[1][j]
-                    + self.m[i][2] * rhs.m[2][j]
-                    + self.m[i][3] * rhs.m[3][j];
+                m[j][i] = self.m[j][0] * rhs.m[0][i]
+                    + self.m[j][1] * rhs.m[1][i]
+                    + self.m[j][2] * rhs.m[2][i]
+                    + self.m[j][3] * rhs.m[3][i];
             }
         }
         self.m = m;
@@ -574,5 +621,63 @@ mod tests {
             [13.0, 14.0, 15.0, 16.0],
         ]);
         assert_eq!(a.scale(b), c);
+    }
+
+    #[test]
+    fn test_m44_rot_x() {
+        let a = M44::new([
+            [1.0, 2.0, 3.0, 4.0],
+            [5.0, 6.0, 7.0, 8.0],
+            [9.0, 10.0, 11.0, 12.0],
+            [13.0, 14.0, 15.0, 16.0],
+        ]);
+        let angle = std::f32::consts::PI / 4.0;
+        let c = M44::new([
+            [1.0, 2.0, 3.0, 4.0],
+            [9.899494, 11.313708, 12.727922, 14.142136],
+            [2.8284268, 2.8284273, 2.8284268, 2.8284268],
+            [13.0, 14.0, 15.0, 16.0],
+        ]);
+        assert_eq!(a.rot_x(angle), c);
+    }
+
+    #[test]
+    fn test_m44_rot_y() {
+        let a = M44::new([
+            [1.0, 2.0, 3.0, 4.0],
+            [5.0, 6.0, 7.0, 8.0],
+            [9.0, 10.0, 11.0, 12.0],
+            [13.0, 14.0, 15.0, 16.0],
+        ]);
+
+        let angle = std::f32::consts::PI / 4.0;
+        let c = M44::new([
+            [-5.656854, -5.656854, -5.656854, -5.6568537],
+            [5.0, 6.0, 7.0, 8.0],
+            [7.0710673, 8.485281, 9.899494, 11.313708],
+            [13.0, 14.0, 15.0, 16.0],
+        ]);
+
+        assert_eq!(a.rot_y(angle), c);
+    }
+
+    #[test]
+    fn test_m44_rot_z() {
+        let a = M44::new([
+            [1.0, 2.0, 3.0, 4.0],
+            [5.0, 6.0, 7.0, 8.0],
+            [9.0, 10.0, 11.0, 12.0],
+            [13.0, 14.0, 15.0, 16.0],
+        ]);
+
+        let angle = std::f32::consts::PI / 4.0;
+        let expected = M44::new([
+            [4.2426405, 5.656854, 7.071068, 8.485281],
+            [2.828427, 2.8284268, 2.8284273, 2.828427],
+            [9.0, 10.0, 11.0, 12.0],
+            [13.0, 14.0, 15.0, 16.0],
+        ]);
+
+        assert_eq!(a.rot_z(angle), expected);
     }
 }
