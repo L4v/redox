@@ -13,6 +13,7 @@ Name comes from the chemical oxidation-reduction formulas, just to sound "Rusty"
     - Normalization
     - Length
 - 4x4 matrices
+    - Identity
     - Addition
     - Subtraction
     - Multiplication
@@ -21,6 +22,8 @@ Name comes from the chemical oxidation-reduction formulas, just to sound "Rusty"
     - Translate
     - Scale
     - Rotate X, Y, Z
+    - Look At
+    - Perspective
 
 
 ## TODO

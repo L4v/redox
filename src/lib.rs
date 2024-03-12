@@ -192,9 +192,9 @@ impl M44 {
 
     pub fn translate(&self, v: V3) -> M44 {
         let mut m = self.m;
-        m[0][3] += v.x;
-        m[1][3] += v.y;
-        m[2][3] += v.z;
+        m[3][0] += v.x;
+        m[3][1] += v.y;
+        m[3][2] += v.z;
         M44 { m }
     }
 
@@ -255,6 +255,30 @@ impl M44 {
             [0.0, 0.0, 0.0, 1.0],
         ]);
         rot_matrix * *self
+    }
+
+    pub fn look_at(eye: V3, center: V3, up: V3) -> M44 {
+        let forward: V3 = (center - eye).normalize();
+        let right: V3 = (forward ^ up).normalize();
+        let u: V3 = right ^ forward;
+
+        M44::new([
+            [right.x, u.x, -forward.x, 0.0],
+            [right.y, u.y, -forward.y, 0.0],
+            [right.z, u.z, -forward.z, 0.0],
+            [-(right * eye), -(u * eye), forward * eye, 1.0],
+        ])
+    }
+
+    pub fn perspective(fov: f32, aspect: f32, near: f32, far: f32) -> M44 {
+        let f = 1.0 / (fov / 2.0).tan();
+        let nf = 1.0 / (near - far);
+        M44::new([
+            [f / aspect, 0.0, 0.0, 0.0],
+            [0.0, f, 0.0, 0.0],
+            [0.0, 0.0, (far + near) * nf, -1.0],
+            [0.0, 0.0, 2.0 * far * near * nf, 0.0],
+        ])
     }
 }
 
@@ -597,10 +621,10 @@ mod tests {
         ]);
         let b = V3::new(1.0, 2.0, 3.0);
         let c = M44::new([
-            [1.0, 2.0, 3.0, 5.0],
-            [5.0, 6.0, 7.0, 10.0],
-            [9.0, 10.0, 11.0, 15.0],
-            [13.0, 14.0, 15.0, 16.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [5.0, 6.0, 7.0, 8.0],
+            [9.0, 10.0, 11.0, 12.0],
+            [14.0, 16.0, 18.0, 16.0],
         ]);
         assert_eq!(a.translate(b), c);
     }
@@ -679,5 +703,34 @@ mod tests {
         ]);
 
         assert_eq!(a.rot_z(angle), expected);
+    }
+
+    #[test]
+    fn test_m44_look_at() {
+        let eye = V3::new(1.0, 1.0, 1.0);
+        let center = V3::new(0.0, 0.0, 0.0);
+        let up = V3::new(0.0, 1.0, 0.0);
+        let expected = M44::new([
+            [0.70710677, -0.40824828, 0.57735026, 0.0],
+            [0.0, 0.81649655, 0.57735026, 0.0],
+            [-0.70710677, -0.40824828, 0.57735026, 0.0],
+            [-0.0, -0.0, -1.7320508, 1.0],
+        ]);
+        assert_eq!(M44::look_at(eye, center, up), expected);
+    }
+
+    #[test]
+    fn test_m44_perspective() {
+        let fov = 45.0;
+        let aspect = 16.0 / 9.0;
+        let near = 0.1;
+        let far = 100.0;
+        let expected = M44::new([
+            [1.0083324, 0.0, 0.0, 0.0],
+            [0.0, 1.792591, 0.0, 0.0],
+            [0.0, 0.0, -1.002002, -1.0],
+            [0.0, 0.0, -0.2002002, 0.0],
+        ]);
+        assert_eq!(M44::perspective(fov, aspect, near, far), expected);
     }
 }
