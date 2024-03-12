@@ -5,22 +5,22 @@ Name comes from the chemical oxidation-reduction formulas, just to sound "Rusty"
 
 ## Features
 - 3D vectors
- - Addition
- - Subtraction
- - Dot product
- - Cross product
- - Lerp
- - Normalization
- - Length
+    - Addition
+    - Subtraction
+    - Dot product
+    - Cross product
+    - Lerp
+    - Normalization
+    - Length
 - 4x4 matrices
- - Addition
- - Subtraction
- - Multiplication
- - Transpose
- - Determinant
- - Translate
- - Scale
- - Rotate X, Y, Z
+    - Addition
+    - Subtraction
+    - Multiplication
+    - Transpose
+    - Determinant
+    - Translate
+    - Scale
+    - Rotate X, Y, Z
 
 
 ## TODO
