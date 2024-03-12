@@ -173,6 +173,34 @@ impl M44 {
         }
     }
 
+    pub fn look_at(eye: V3, center: V3, up: V3) -> M44 {
+        let forward: V3 = (center - eye).normalize();
+        let right: V3 = (forward ^ up).normalize();
+        let u: V3 = right ^ forward;
+
+        M44 {
+            m: [
+                [right.x, u.x, -forward.x, 0.0],
+                [right.y, u.y, -forward.y, 0.0],
+                [right.z, u.z, -forward.z, 0.0],
+                [-(right * eye), -(u * eye), forward * eye, 1.0],
+            ],
+        }
+    }
+
+    pub fn perspective(fov: f32, aspect: f32, near: f32, far: f32) -> M44 {
+        let f = 1.0 / (fov / 2.0).tan();
+        let nf = 1.0 / (near - far);
+        M44 {
+            m: [
+                [f / aspect, 0.0, 0.0, 0.0],
+                [0.0, f, 0.0, 0.0],
+                [0.0, 0.0, (far + near) * nf, -1.0],
+                [0.0, 0.0, 2.0 * far * near * nf, 0.0],
+            ],
+        }
+    }
+
     pub fn det(&self) -> f32 {
         self.m[0][0] * (self.m[1][1] * self.m[2][2] - self.m[1][2] * self.m[2][1])
             - self.m[0][1] * (self.m[1][0] * self.m[2][2] - self.m[1][2] * self.m[2][0])
@@ -255,30 +283,6 @@ impl M44 {
             [0.0, 0.0, 0.0, 1.0],
         ]);
         rot_matrix * *self
-    }
-
-    pub fn look_at(eye: V3, center: V3, up: V3) -> M44 {
-        let forward: V3 = (center - eye).normalize();
-        let right: V3 = (forward ^ up).normalize();
-        let u: V3 = right ^ forward;
-
-        M44::new([
-            [right.x, u.x, -forward.x, 0.0],
-            [right.y, u.y, -forward.y, 0.0],
-            [right.z, u.z, -forward.z, 0.0],
-            [-(right * eye), -(u * eye), forward * eye, 1.0],
-        ])
-    }
-
-    pub fn perspective(fov: f32, aspect: f32, near: f32, far: f32) -> M44 {
-        let f = 1.0 / (fov / 2.0).tan();
-        let nf = 1.0 / (near - far);
-        M44::new([
-            [f / aspect, 0.0, 0.0, 0.0],
-            [0.0, f, 0.0, 0.0],
-            [0.0, 0.0, (far + near) * nf, -1.0],
-            [0.0, 0.0, 2.0 * far * near * nf, 0.0],
-        ])
     }
 }
 
