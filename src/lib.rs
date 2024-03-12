@@ -6,9 +6,9 @@ use std::{self, ops};
 
 #[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub struct V3 {
-    x: f32,
-    y: f32,
-    z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 impl V3 {
@@ -143,7 +143,7 @@ pub fn lerp(a: V3, b: V3, t: f32) -> V3 {
 // m[3] fourth column
 #[derive(Copy, Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct M44 {
-    m: [[f32; 4]; 4],
+    pub m: [[f32; 4]; 4],
 }
 
 impl M44 {
